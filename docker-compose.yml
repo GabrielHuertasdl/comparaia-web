@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: comparaia_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comparaia
+      POSTGRES_PASSWORD: comparaia_dev
+      POSTGRES_DB: comparaia
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U comparaia']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comparaia_app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://comparaia:comparaia_dev@postgres:5432/comparaia
+      JWT_SECRET: dev-secret-change-in-production-min-32-chars
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - full
+
+volumes:
+  postgres_data:

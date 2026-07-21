@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/editorial/ingest",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/scores/update-stale",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

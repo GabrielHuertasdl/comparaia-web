@@ -1,0 +1,582 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────────────────────────
+
+enum ArticleStatus {
+  INGESTED
+  DRAFTING
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum ContentType {
+  NEWS
+  COMPARISON
+  RANKING
+  GUIDE
+  TOOL_PROFILE
+}
+
+enum ReviewDecision {
+  APPROVED
+  REJECTED
+  REVISION_NEEDED
+}
+
+enum ScoreConfidence {
+  VERIFIED
+  COMMUNITY
+  ESTIMATED
+  PLACEHOLDER
+}
+
+enum ModelStatus {
+  ACTIVE
+  DEPRECATED
+  BETA
+  DISCONTINUED
+}
+
+enum ToolPricingModel {
+  FREE
+  FREEMIUM
+  SUBSCRIPTION
+  PAY_PER_USE
+  ENTERPRISE
+}
+
+enum AffiliateType {
+  CPA
+  CPC
+  HYBRID
+}
+
+enum LegalDocType {
+  AVISO_LEGAL
+  PRIVACIDAD
+  COOKIES
+  POLITICA_EDITORIAL
+  AFILIACION
+  TERMINOS
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  REVIEWER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  PUBLISH
+  UNPUBLISH
+  DELETE
+  REVIEW_SUBMIT
+  SCORE_UPDATE
+  LOGIN
+}
+
+enum SourceType {
+  RSS
+  API
+  MANUAL
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  role         UserRole  @default(EDITOR)
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  authored  Article[]         @relation("AuthoredBy")
+  reviews   EditorialReview[] @relation("ReviewedBy")
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+// ── Sources & Ingestion ────────────────────────────────────────────────────────
+
+model Source {
+  id          String     @id @default(cuid())
+  name        String
+  url         String     @unique
+  type        SourceType @default(RSS)
+  active      Boolean    @default(true)
+  lastFetchAt DateTime?
+  createdAt   DateTime   @default(now())
+
+  articles Article[]
+
+  @@map("sources")
+}
+
+// ── Articles ───────────────────────────────────────────────────────────────────
+
+model Article {
+  id                String        @id @default(cuid())
+  slug              String        @unique
+  title             String
+  excerpt           String
+  body              String
+  contentType       ContentType   @default(NEWS)
+  status            ArticleStatus @default(INGESTED)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  authorId String?
+  author   User?   @relation("AuthoredBy", fields: [authorId], references: [id])
+
+  sourceId          String?
+  source            Source?  @relation(fields: [sourceId], references: [id])
+  sourceUrl         String?  @unique
+  sourcePublishedAt DateTime?
+
+  metaTitle       String?
+  metaDescription String?
+  ogImageUrl      String?
+  canonicalUrl    String?
+
+  relevanceScore Float    @default(0)
+  keyPoints      String[]
+
+  categories      CategoriesOnArticles[]
+  tags            TagsOnArticles[]
+  mentionedModels AIModelsOnArticles[]
+  publicationQueue PublicationQueue?
+  reviews         EditorialReview[]
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([contentType, status])
+  @@map("articles")
+}
+
+// ── AI Models ──────────────────────────────────────────────────────────────────
+
+model AIModel {
+  id             String      @id @default(cuid())
+  slug           String      @unique
+  name           String
+  developer      String
+  version        String?
+  releaseDate    DateTime?
+  status         ModelStatus @default(ACTIVE)
+  description    String
+  logoUrl        String?
+  officialUrl    String?
+  contextWindow  Int?
+  supportsVision Boolean     @default(false)
+  supportsTools  Boolean     @default(false)
+  supportsCode   Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  scores         ModelScore[]
+  comparisons    ModelsOnComparisons[]
+  rankings       ModelsOnRankings[]
+  affiliateLinks AffiliateLink[]
+  articles       AIModelsOnArticles[]
+  tool           AITool?
+
+  @@index([developer])
+  @@map("ai_models")
+}
+
+model AITool {
+  id            String           @id @default(cuid())
+  slug          String           @unique
+  name          String
+  tagline       String
+  description   String
+  logoUrl       String?
+  websiteUrl    String?
+  pricingModel  ToolPricingModel
+  startingPrice Float?
+  hasFreeplan   Boolean          @default(false)
+  trialDays     Int?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  modelId String?  @unique
+  model   AIModel? @relation(fields: [modelId], references: [id])
+
+  categories     CategoriesOnTools[]
+  useCases       UseCasesOnTools[]
+  affiliateLinks AffiliateLink[]
+
+  @@map("ai_tools")
+}
+
+// ── Scoring System ─────────────────────────────────────────────────────────────
+
+model UseCase {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String
+  iconName    String?
+
+  criteria ScoringCriteria[]
+  scores   ModelScore[]
+  tools    UseCasesOnTools[]
+  rankings Ranking[]
+
+  @@map("use_cases")
+}
+
+model ScoringCriteria {
+  id             String  @id @default(cuid())
+  useCaseId      String
+  useCase        UseCase @relation(fields: [useCaseId], references: [id])
+  slug           String
+  name           String
+  description    String
+  weight         Float
+  unit           String?
+  higherIsBetter Boolean @default(true)
+  minValue       Float?
+  maxValue       Float?
+
+  scores ModelScore[]
+
+  @@unique([useCaseId, slug])
+  @@map("scoring_criteria")
+}
+
+model ModelScore {
+  id              String          @id @default(cuid())
+  modelId         String
+  model           AIModel         @relation(fields: [modelId], references: [id])
+  useCaseId       String
+  useCase         UseCase         @relation(fields: [useCaseId], references: [id])
+  criteriaId      String
+  criteria        ScoringCriteria @relation(fields: [criteriaId], references: [id])
+
+  rawValue        Float?
+  normalizedScore Float?
+  confidence      ScoreConfidence @default(PLACEHOLDER)
+  sourceUrl       String?
+  sourceDate      DateTime?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([modelId, useCaseId, criteriaId])
+  @@index([modelId, useCaseId])
+  @@map("model_scores")
+}
+
+// ── Comparisons & Rankings ─────────────────────────────────────────────────────
+
+model Comparison {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  body        String
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  metaTitle       String?
+  metaDescription String?
+  ogImageUrl      String?
+
+  models      ModelsOnComparisons[]
+  categories  CategoriesOnComparisons[]
+  tags        TagsOnComparisons[]
+
+  @@index([publishedAt(sort: Desc)])
+  @@map("comparisons")
+}
+
+model Ranking {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  body        String
+  useCaseId   String?
+  useCase     UseCase?  @relation(fields: [useCaseId], references: [id])
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  metaTitle       String?
+  metaDescription String?
+
+  models ModelsOnRankings[]
+  tags   TagsOnRankings[]
+
+  @@index([publishedAt(sort: Desc)])
+  @@map("rankings")
+}
+
+// ── Taxonomy ───────────────────────────────────────────────────────────────────
+
+model Category {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  parentId    String?
+  parent      Category?  @relation("Tree", fields: [parentId], references: [id])
+  children    Category[] @relation("Tree")
+
+  articles    CategoriesOnArticles[]
+  tools       CategoriesOnTools[]
+  comparisons CategoriesOnComparisons[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  articles    TagsOnArticles[]
+  comparisons TagsOnComparisons[]
+  rankings    TagsOnRankings[]
+
+  @@map("tags")
+}
+
+// ── Junction Tables ────────────────────────────────────────────────────────────
+
+model CategoriesOnArticles {
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([articleId, categoryId])
+  @@map("categories_on_articles")
+}
+
+model TagsOnArticles {
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id])
+
+  @@id([articleId, tagId])
+  @@map("tags_on_articles")
+}
+
+model AIModelsOnArticles {
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  modelId   String
+  model     AIModel @relation(fields: [modelId], references: [id])
+
+  @@id([articleId, modelId])
+  @@map("ai_models_on_articles")
+}
+
+model ModelsOnComparisons {
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  modelId      String
+  model        AIModel    @relation(fields: [modelId], references: [id])
+  displayOrder Int        @default(0)
+
+  @@id([comparisonId, modelId])
+  @@map("models_on_comparisons")
+}
+
+model CategoriesOnComparisons {
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+
+  @@id([comparisonId, categoryId])
+  @@map("categories_on_comparisons")
+}
+
+model TagsOnComparisons {
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  tagId        String
+  tag          Tag        @relation(fields: [tagId], references: [id])
+
+  @@id([comparisonId, tagId])
+  @@map("tags_on_comparisons")
+}
+
+model ModelsOnRankings {
+  rankingId  String
+  ranking    Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  modelId    String
+  model      AIModel @relation(fields: [modelId], references: [id])
+  position   Int
+  totalScore Float
+
+  @@id([rankingId, modelId])
+  @@map("models_on_rankings")
+}
+
+model TagsOnRankings {
+  rankingId String
+  ranking   Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id])
+
+  @@id([rankingId, tagId])
+  @@map("tags_on_rankings")
+}
+
+model UseCasesOnTools {
+  toolId    String
+  tool      AITool  @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  useCaseId String
+  useCase   UseCase @relation(fields: [useCaseId], references: [id])
+
+  @@id([toolId, useCaseId])
+  @@map("use_cases_on_tools")
+}
+
+model CategoriesOnTools {
+  toolId     String
+  tool       AITool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([toolId, categoryId])
+  @@map("categories_on_tools")
+}
+
+// ── Editorial Pipeline ─────────────────────────────────────────────────────────
+
+model PublicationQueue {
+  id        String   @id @default(cuid())
+  articleId String   @unique
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  priority  Int      @default(5)
+  addedAt   DateTime @default(now())
+  notes     String?
+
+  @@index([priority(sort: Desc), addedAt])
+  @@map("publication_queue")
+}
+
+model EditorialReview {
+  id         String         @id @default(cuid())
+  articleId  String
+  article    Article        @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User           @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  decision   ReviewDecision
+  feedback   String?
+  createdAt  DateTime       @default(now())
+
+  @@index([articleId])
+  @@map("editorial_reviews")
+}
+
+// ── Monetization ───────────────────────────────────────────────────────────────
+
+model AffiliateLink {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  destination String
+  type        AffiliateType
+  partner     String
+  commission  Float?
+  active      Boolean       @default(true)
+  clickCount  Int           @default(0)
+  createdAt   DateTime      @default(now())
+
+  modelId String?
+  model   AIModel? @relation(fields: [modelId], references: [id])
+  toolId  String?
+  tool    AITool?  @relation(fields: [toolId], references: [id])
+
+  @@map("affiliate_links")
+}
+
+// ── Newsletter ─────────────────────────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  confirmedAt    DateTime?
+  consentIp      String
+  consentAt      DateTime  @default(now())
+  consentVersion String
+  active         Boolean   @default(true)
+  unsubscribedAt DateTime?
+  segments       String[]
+
+  @@map("newsletter_subscribers")
+}
+
+// ── Legal & Compliance ─────────────────────────────────────────────────────────
+
+model LegalDocument {
+  id          String       @id @default(cuid())
+  type        LegalDocType @unique
+  title       String
+  content     String
+  version     String
+  effectiveAt DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("legal_documents")
+}
+
+model CookieConsent {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique
+  analytics     Boolean  @default(false)
+  advertising   Boolean  @default(false)
+  functional    Boolean  @default(true)
+  consentAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  ipHash        String
+  policyVersion String
+
+  @@map("cookie_consents")
+}
+
+// ── Audit Log ──────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id])
+  action     AuditAction
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

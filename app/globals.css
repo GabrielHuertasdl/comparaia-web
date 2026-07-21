@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98.5%;
+    --foreground: 222 47% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 8%;
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 221 83% 53%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 95%;
+    --secondary-foreground: 222 47% 8%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --radius: 0.5rem;
+    --affiliate: 263 70% 54%;
+    --confidence-verified: 158 64% 35%;
+    --confidence-community: 198 72% 42%;
+    --confidence-estimated: 43 96% 46%;
+    --confidence-placeholder: 220 9% 64%;
+  }
+  .dark {
+    --background: 222 47% 5%;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 96%;
+    --border: 217 33% 14%;
+    --input: 217 33% 14%;
+    --ring: 217 91% 65%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 5%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 10%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 217 91% 65%;
+    --accent-foreground: 222 47% 5%;
+    --destructive: 0 74% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --affiliate: 263 60% 65%;
+    --confidence-verified: 158 54% 48%;
+    --confidence-community: 198 62% 55%;
+    --confidence-estimated: 43 86% 58%;
+  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-body antialiased; }
+  h1, h2, h3, h4 { @apply font-heading; }
+}
+
+@layer utilities {
+  .font-heading { font-family: var(--font-sora), system-ui, sans-serif; }
+  .font-body { font-family: var(--font-inter), system-ui, sans-serif; }
+  .font-mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+  .prose-editorial { font-family: var(--font-inter); line-height: 1.75; }
+  .prose-editorial h2 { font-family: var(--font-sora); }
+  .prose-editorial h3 { font-family: var(--font-sora); }
+  .text-balance { text-wrap: balance; }
+  .container-editorial { @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8; }
+  .container-wide { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+}
