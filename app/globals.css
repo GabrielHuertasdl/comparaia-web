@@ -66,4 +66,31 @@
   .text-balance { text-wrap: balance; }
   .container-editorial { @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8; }
   .container-wide { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 3.5rem 3.5rem;
+  }
+  .bg-hero-glow {
+    background: radial-gradient(
+      ellipse 80% 55% at 50% -5%,
+      hsl(var(--primary) / 0.18),
+      transparent 70%
+    );
+  }
+  .bg-newsletter-glow {
+    background: radial-gradient(
+      ellipse 65% 85% at 50% 110%,
+      hsl(var(--primary) / 0.1),
+      transparent 70%
+    );
+  }
+  .shadow-glow {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.28);
+  }
+  .shadow-glow:hover {
+    box-shadow: 0 0 55px hsl(var(--primary) / 0.38);
+  }
 }
