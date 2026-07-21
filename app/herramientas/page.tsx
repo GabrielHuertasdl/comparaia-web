@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { db } from '@/lib/db'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import PageHeader from '@/components/layout/PageHeader'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { SITE_NAME } from '@/lib/constants/site'
 

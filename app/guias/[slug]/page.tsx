@@ -4,8 +4,8 @@ import type { Metadata } from 'next'
 import { ArticleHeader } from '@/components/editorial/ArticleHeader'
 import { ArticleBody } from '@/components/editorial/ArticleBody'
 import { RelatedArticles } from '@/components/editorial/RelatedArticles'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
-import { ArticleJsonLd } from '@/components/seo/ArticleJsonLd'
+import Breadcrumb from '@/components/layout/Breadcrumb'
+import ArticleJsonLd from '@/components/seo/ArticleJsonLd'
 import { buildArticleMeta } from '@/lib/seo/metadata'
 import { readingTime } from '@/lib/utils/format'
 
@@ -61,7 +61,7 @@ export default async function GuiaPage({ params }: Props) {
     },
     take: 3,
     orderBy: { publishedAt: 'desc' },
-    select: { slug: true, title: true, contentType: true, publishedAt: true },
+    select: { slug: true, title: true, excerpt: true, publishedAt: true },
   })
 
   const breadcrumbItems = [
@@ -76,15 +76,15 @@ export default async function GuiaPage({ params }: Props) {
       <div className="container-editorial py-8 space-y-8">
         <Breadcrumb items={breadcrumbItems} />
         <ArticleHeader
-          title={article.title}
-          excerpt={article.excerpt}
-          publishedAt={article.publishedAt}
-          readingTime={readingTime(article.body)}
-          author={article.author}
-          source={article.source}
-          categories={article.categories as any}
+          article={{
+            title: article.title,
+            excerpt: article.excerpt,
+            publishedAt: article.publishedAt,
+            author: article.author,
+            categories: article.categories as any,
+          }}
         />
-        <ArticleBody content={article.body} />
+        <ArticleBody html={article.body} />
         {related.length > 0 && <RelatedArticles articles={related} />}
       </div>
     </>

@@ -23,6 +23,7 @@ async function getArticle(slug: string) {
     where: { slug, status: ArticleStatus.PUBLISHED },
     include: {
       author: { select: { name: true } },
+      source: { select: { name: true } },
       categories: { include: { category: true } },
       tags: { include: { tag: true } },
       mentionedModels: {

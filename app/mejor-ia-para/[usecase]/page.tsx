@@ -3,12 +3,12 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { calculateMultipleScores } from '@/lib/scoring/engine'
 import { buildUseCaseMeta } from '@/lib/seo/metadata'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import PageHeader from '@/components/layout/PageHeader'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { RankingTable } from '@/components/rankings/RankingTable'
-import { ItemListJsonLd } from '@/components/seo/ItemListJsonLd'
-import { FAQJsonLd } from '@/components/seo/FAQJsonLd'
-import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd'
+import FAQJsonLd from '@/components/seo/FAQJsonLd'
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd'
 import { AffiliateBox } from '@/components/monetization/AffiliateBox'
 import Link from 'next/link'
 import { USE_CASES } from '@/lib/constants/use-cases'
@@ -125,15 +125,14 @@ export default async function MejorIAParaPage({ params }: Props) {
           <section className="space-y-3">
             <h2 className="text-lg font-heading font-semibold">Herramientas recomendadas</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {affiliateLinks.slice(0, 3).map((link) =>
-                link.tool ? (
-                  <AffiliateBox
-                    key={link.id}
-                    link={{ slug: link.slug, partner: link.partner }}
-                    tool={link.tool}
-                    variant="inline"
-                  />
-                ) : null
+              {affiliateLinks.slice(0, 3).filter((link) => link.tool).length > 0 && (
+                <AffiliateBox
+                  models={affiliateLinks.slice(0, 3).filter((link) => link.tool).map((link) => ({
+                    name: link.tool!.name,
+                    logoUrl: link.tool!.logoUrl ?? null,
+                    affiliateLinks: [{ slug: link.slug, destination: link.destination, partner: link.partner, active: true }],
+                  }))}
+                />
               )}
             </div>
           </section>
@@ -144,7 +143,7 @@ export default async function MejorIAParaPage({ params }: Props) {
           <h2 className="text-xl font-heading font-semibold">
             Ranking: mejor IA para {useCase.name.toLowerCase()}
           </h2>
-          <RankingTable models={rankedModels} />
+          <RankingTable entries={rankedModels} />
         </section>
 
         {/* Criteria explanation */}

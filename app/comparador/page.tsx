@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { db } from '@/lib/db'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import PageHeader from '@/components/layout/PageHeader'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import dynamic from 'next/dynamic'
 import { USE_CASES } from '@/lib/constants/use-cases'
 
 const ComparatorWizard = dynamic(
-  () => import('@/components/comparator/ComparatorWizard'),
+  () => import('@/components/comparator/ComparatorWizard').then(m => ({ default: m.ComparatorWizard })),
   { ssr: false, loading: () => <ComparatorSkeleton /> }
 )
 
@@ -81,7 +81,11 @@ export default async function ComparadorPage() {
         </a>
       </div>
 
-      <ComparatorWizard models={models as any} useCases={useCases as any} />
+      <ComparatorWizard
+        models={models as any}
+        useCases={useCases as any}
+        criteria={useCases.flatMap((uc: any) => uc.criteria ?? [])}
+      />
     </div>
   )
 }

@@ -70,7 +70,7 @@ export async function PATCH(request: Request, { params }: { params: { criteriaId
       action: 'SCORE_UPDATE',
       entityType: 'ModelScore',
       entityId: score.id,
-      before: existing ? { rawValue: existing.rawValue, confidence: existing.confidence } : null,
+      before: existing ? { rawValue: existing.rawValue, confidence: existing.confidence } : undefined,
       after: { rawValue, normalizedScore, confidence },
     },
   })

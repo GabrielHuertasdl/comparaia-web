@@ -1,13 +1,13 @@
 import { db } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import PageHeader from '@/components/layout/PageHeader'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { ToolHeader } from '@/components/tools/ToolHeader'
 import { ToolPricingTable } from '@/components/tools/ToolPricingTable'
 import { AffiliateBox } from '@/components/monetization/AffiliateBox'
-import { SoftwareAppJsonLd } from '@/components/seo/SoftwareAppJsonLd'
-import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import SoftwareAppJsonLd from '@/components/seo/SoftwareAppJsonLd'
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd'
 import { AffiliateDisclosure } from '@/components/legal/AffiliateDisclosure'
 import { buildToolMeta } from '@/lib/seo/metadata'
 import Link from 'next/link'
@@ -97,14 +97,11 @@ export default async function HerramientaPage({ params }: Props) {
         {affiliate && (
           <div className="max-w-2xl">
             <AffiliateBox
-              link={{ slug: affiliate.slug, partner: affiliate.partner }}
-              tool={{
+              models={[{
                 name: tool.name,
-                tagline: tool.tagline,
                 logoUrl: tool.logoUrl,
-                hasFreeplan: tool.hasFreeplan,
-              }}
-              variant="featured"
+                affiliateLinks: [{ slug: affiliate.slug, destination: affiliate.destination, partner: affiliate.partner, active: true }],
+              }]}
             />
           </div>
         )}

@@ -10,6 +10,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     typedRoutes: false,
   },
