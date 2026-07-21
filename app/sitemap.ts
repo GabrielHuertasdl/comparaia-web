@@ -8,30 +8,40 @@ export const revalidate = 3600
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
-  const [articles, comparisons, rankings, tools, useCases] = await Promise.all([
-    db.article.findMany({
-      where: { status: ArticleStatus.PUBLISHED },
-      select: { slug: true, publishedAt: true, updatedAt: true },
-      orderBy: { publishedAt: 'desc' },
-    }),
-    db.comparison.findMany({
-      where: { publishedAt: { not: null } },
-      select: { slug: true, publishedAt: true, updatedAt: true },
-      orderBy: { publishedAt: 'desc' },
-    }),
-    db.ranking.findMany({
-      where: { publishedAt: { not: null } },
-      select: { slug: true, publishedAt: true, updatedAt: true },
-      orderBy: { publishedAt: 'desc' },
-    }),
-    db.aITool.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    }),
-    db.useCase.findMany({
-      select: { slug: true },
-    }),
-  ])
+  let articles: { slug: string; publishedAt: Date | null; updatedAt: Date }[] = []
+  let comparisons: { slug: string; publishedAt: Date | null; updatedAt: Date }[] = []
+  let rankings: { slug: string; publishedAt: Date | null; updatedAt: Date }[] = []
+  let tools: { slug: string; updatedAt: Date }[] = []
+  let useCases: { slug: string }[] = []
+
+  try {
+    ;[articles, comparisons, rankings, tools, useCases] = await Promise.all([
+      db.article.findMany({
+        where: { status: ArticleStatus.PUBLISHED },
+        select: { slug: true, publishedAt: true, updatedAt: true },
+        orderBy: { publishedAt: 'desc' },
+      }),
+      db.comparison.findMany({
+        where: { publishedAt: { not: null } },
+        select: { slug: true, publishedAt: true, updatedAt: true },
+        orderBy: { publishedAt: 'desc' },
+      }),
+      db.ranking.findMany({
+        where: { publishedAt: { not: null } },
+        select: { slug: true, publishedAt: true, updatedAt: true },
+        orderBy: { publishedAt: 'desc' },
+      }),
+      db.aITool.findMany({
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      db.useCase.findMany({
+        select: { slug: true },
+      }),
+    ])
+  } catch {
+    // DB unavailable at build time — return static pages only
+  }
 
   const staticPages: MetadataRoute.Sitemap = [
     {
