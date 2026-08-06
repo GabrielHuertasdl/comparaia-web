@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getAdminSession } from '@/lib/auth'
 import { ingestAllSources } from '@/lib/editorial/ingestor'
+import { authorizeCronOrAdmin } from '@/lib/cron'
 import { db } from '@/lib/db'
 
-export async function POST(request: Request) {
-  const session = await getAdminSession()
-  if (!session) {
+export const dynamic = 'force-dynamic'
+
+async function handle(request: Request) {
+  const caller = await authorizeCronOrAdmin(request)
+  if (!caller) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -16,10 +18,10 @@ export async function POST(request: Request) {
 
     await db.auditLog.create({
       data: {
-        userId: session.userId,
+        userId: caller.userId,
         action: 'UPDATE',
         entityType: 'Ingest',
-        entityId: 'manual',
+        entityId: caller.kind === 'cron' ? 'scheduled' : 'manual',
         after: { totalFetched, totalQueued, sources: results.length },
       },
     })
@@ -34,6 +36,12 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+/** Vercel cron invokes scheduled paths with GET. */
+export async function GET(request: Request) {
+  return handle(request)
+}
+
+/** Manual trigger from the admin UI. */
+export async function POST(request: Request) {
+  return handle(request)
 }
