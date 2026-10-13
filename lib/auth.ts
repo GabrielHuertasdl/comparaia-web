@@ -1,9 +1,16 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'fallback-secret-min-32-chars-replace-in-prod'
-)
+// Resolved lazily so `next build` works without the variable; in production a
+// missing or short secret fails closed instead of falling back to a known value.
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (secret && secret.length >= 32) return new TextEncoder().encode(secret)
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set to at least 32 characters in production')
+  }
+  return new TextEncoder().encode('dev-only-secret-not-for-production-use')
+}
 
 const COOKIE_NAME = 'admin_token'
 const TOKEN_TTL = '7d'
@@ -19,12 +26,12 @@ export async function signAdminJWT(payload: AdminPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(TOKEN_TTL)
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 }
 
 export async function verifyAdminJWT(token: string): Promise<AdminPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return payload as unknown as AdminPayload
   } catch {
     return null
