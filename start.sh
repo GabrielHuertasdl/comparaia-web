@@ -72,7 +72,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  ComparaIA dev server starting..."
 echo "  http://localhost:3000"
 echo "  Admin: http://localhost:3000/admin"
-echo "  Login: admin@comparaia.es / REDACTED_DEMO_PASSWORD"
+echo "  Login: admin@comparaia.es (password printed by the seed step, or SEED_ADMIN_PASSWORD)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

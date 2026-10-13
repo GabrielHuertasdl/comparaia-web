@@ -76,8 +76,9 @@ async function main() {
 
   log('Seeding admin user...');
 
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'REDACTED_DEMO_PASSWORD';
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? globalThis.crypto.randomUUID().slice(0, 12);
   const adminHash = bcrypt.hashSync(adminPassword, 12);
+  log(`Admin login: admin@comparaia.es / ${adminPassword}`);
 
   await prisma.user.upsert({
     where: { email: 'admin@comparaia.es' },
